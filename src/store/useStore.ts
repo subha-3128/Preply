@@ -6,6 +6,7 @@ import { generateStudyPlan, rescheduleMissedSession } from '../lib/planner'
 import {
   isFirebaseConfigured,
   initAuth,
+  fetchCloudData,
   syncUserToFirestore,
   syncSubjectsToFirestore,
   syncPlanToFirestore,
@@ -62,9 +63,12 @@ let activeUnsubscribe: (() => void) | null = null
 function triggerFirebaseSync(get: () => PreplyState) {
   const { firebaseUser, user, subjects, plan } = get()
   if (firebaseUser) {
-    syncUserToFirestore(firebaseUser.uid, user)
-    syncSubjectsToFirestore(firebaseUser.uid, subjects)
-    syncPlanToFirestore(firebaseUser.uid, plan)
+    const handleErr = (errMsg: string) => {
+      useStore.setState({ firebaseError: errMsg })
+    }
+    syncUserToFirestore(firebaseUser.uid, user, handleErr)
+    syncSubjectsToFirestore(firebaseUser.uid, subjects, handleErr)
+    syncPlanToFirestore(firebaseUser.uid, plan, handleErr)
   }
 }
 
@@ -92,7 +96,7 @@ export const useStore = create<PreplyState>()(
           return
         }
 
-        initAuth((fbUser, errorMsg) => {
+        initAuth(async (fbUser, errorMsg) => {
           // Unsubscribe from previous listener if user changed
           if (activeUnsubscribe) {
             activeUnsubscribe()
@@ -102,7 +106,32 @@ export const useStore = create<PreplyState>()(
           if (fbUser) {
             set({ firebaseUser: fbUser, firebaseStatus: 'connected', firebaseError: null })
 
-            // Subscribe to Firestore cloud data
+            try {
+              // 1. Fetch Cloud Data First (so new device doesn't overwrite Cloud with empty state)
+              const cloud = await fetchCloudData(fbUser.uid)
+              if (cloud) {
+                const current = get()
+                if (cloud.subjects && cloud.subjects.length > 0) {
+                  set({
+                    subjects: cloud.subjects,
+                    user: cloud.user ? { ...current.user, ...cloud.user } : current.user,
+                    plan: cloud.plan !== undefined ? cloud.plan : current.plan,
+                  })
+                } else if (current.subjects.length > 0) {
+                  // Cloud is empty, but local has subjects -> push local to cloud once
+                  triggerFirebaseSync(get)
+                }
+              }
+            } catch (err: any) {
+              console.error('Failed to fetch initial cloud data:', err)
+              if (err?.code === 'permission-denied') {
+                set({
+                  firebaseError: 'Firestore Permission Denied: Go to Firebase Console > Firestore Database > Rules and allow read, write.'
+                })
+              }
+            }
+
+            // 2. Subscribe to real-time updates for multi-device sync
             activeUnsubscribe = subscribeToFirebaseData(
               fbUser.uid,
               (cloudData) => {
@@ -113,12 +142,8 @@ export const useStore = create<PreplyState>()(
                   plan: cloudData.plan !== undefined ? cloudData.plan : current.plan,
                 })
               },
-              () => {
-                // If cloud document is completely empty, push local state to Firestore once
-                const { subjects } = get()
-                if (subjects.length > 0) {
-                  triggerFirebaseSync(get)
-                }
+              (errAlert) => {
+                set({ firebaseError: errAlert })
               }
             )
           } else {

@@ -13,6 +13,7 @@ import {
   getFirestore,
   doc,
   setDoc,
+  getDoc,
   onSnapshot,
   type Firestore,
 } from 'firebase/firestore'
@@ -97,42 +98,74 @@ export async function logoutUser() {
 }
 
 /**
- * Firestore Sync Helpers
+ * Fetch cloud data once on user login
  */
-export async function syncUserToFirestore(userId: string, user: User) {
-  if (!db) return
+export async function fetchCloudData(userId: string): Promise<{ user?: User; subjects?: Subject[]; plan?: GeneratedPlan | null } | null> {
+  if (!db) return null
   try {
-    await setDoc(doc(db, 'users', userId), { ...user }, { merge: true })
-  } catch (err) {
-    console.error('Error syncing user to Firestore:', err)
-  }
-}
+    const userDoc = await getDoc(doc(db, 'users', userId))
+    const subjectsDoc = await getDoc(doc(db, 'users', userId, 'data', 'subjects'))
+    const planDoc = await getDoc(doc(db, 'users', userId, 'data', 'plan'))
 
-export async function syncSubjectsToFirestore(userId: string, subjects: Subject[]) {
-  if (!db) return
-  try {
-    await setDoc(doc(db, 'users', userId, 'data', 'subjects'), { subjects: JSON.parse(JSON.stringify(subjects)) })
-  } catch (err) {
-    console.error('Error syncing subjects to Firestore:', err)
-  }
-}
+    const result: { user?: User; subjects?: Subject[]; plan?: GeneratedPlan | null } = {}
 
-export async function syncPlanToFirestore(userId: string, plan: GeneratedPlan | null) {
-  if (!db) return
-  try {
-    await setDoc(doc(db, 'users', userId, 'data', 'plan'), { plan: plan ? JSON.parse(JSON.stringify(plan)) : null })
-  } catch (err) {
-    console.error('Error syncing plan to Firestore:', err)
+    if (userDoc.exists()) {
+      result.user = userDoc.data() as User
+    }
+    if (subjectsDoc.exists() && subjectsDoc.data()?.subjects) {
+      result.subjects = subjectsDoc.data().subjects as Subject[]
+    }
+    if (planDoc.exists()) {
+      result.plan = planDoc.data().plan as GeneratedPlan | null
+    }
+
+    return result
+  } catch (err: any) {
+    console.error('Error fetching cloud data:', err)
+    throw err
   }
 }
 
 /**
- * Real-time listener for user data with empty document handling
+ * Firestore Sync Helpers
+ */
+export async function syncUserToFirestore(userId: string, user: User, onError?: (err: string) => void) {
+  if (!db) return
+  try {
+    await setDoc(doc(db, 'users', userId), { ...user }, { merge: true })
+  } catch (err: any) {
+    console.error('Error syncing user to Firestore:', err)
+    if (onError) onError(err?.message || 'Firestore write permission error')
+  }
+}
+
+export async function syncSubjectsToFirestore(userId: string, subjects: Subject[], onError?: (err: string) => void) {
+  if (!db) return
+  try {
+    await setDoc(doc(db, 'users', userId, 'data', 'subjects'), { subjects: JSON.parse(JSON.stringify(subjects)) })
+  } catch (err: any) {
+    console.error('Error syncing subjects to Firestore:', err)
+    if (onError) onError(err?.message || 'Firestore write permission error')
+  }
+}
+
+export async function syncPlanToFirestore(userId: string, plan: GeneratedPlan | null, onError?: (err: string) => void) {
+  if (!db) return
+  try {
+    await setDoc(doc(db, 'users', userId, 'data', 'plan'), { plan: plan ? JSON.parse(JSON.stringify(plan)) : null })
+  } catch (err: any) {
+    console.error('Error syncing plan to Firestore:', err)
+    if (onError) onError(err?.message || 'Firestore write permission error')
+  }
+}
+
+/**
+ * Real-time listener for user data
  */
 export function subscribeToFirebaseData(
   userId: string,
   onData: (data: { user?: User; subjects?: Subject[]; plan?: GeneratedPlan | null }) => void,
-  onEmptySubjects?: () => void
+  onError?: (err: string) => void
 ) {
   if (!db) return () => {}
 
@@ -140,25 +173,34 @@ export function subscribeToFirebaseData(
   const subjectsDocRef = doc(db, 'users', userId, 'data', 'subjects')
   const planDocRef = doc(db, 'users', userId, 'data', 'plan')
 
+  const handleErr = (err: any) => {
+    console.error('Firestore snapshot error:', err)
+    if (onError) {
+      if (err?.code === 'permission-denied') {
+        onError('Firestore Security Rules Error: Permission denied. Please enable read/write in Firebase Console > Firestore Rules.')
+      } else {
+        onError(err?.message || 'Firestore subscription error')
+      }
+    }
+  }
+
   const unSubUser = onSnapshot(userDocRef, (snapshot) => {
     if (snapshot.exists()) {
       onData({ user: snapshot.data() as User })
     }
-  }, (err) => console.error('Firestore User snapshot error:', err))
+  }, handleErr)
 
   const unSubSubjects = onSnapshot(subjectsDocRef, (snapshot) => {
     if (snapshot.exists() && snapshot.data()?.subjects) {
       onData({ subjects: snapshot.data().subjects as Subject[] })
-    } else if (onEmptySubjects) {
-      onEmptySubjects()
     }
-  }, (err) => console.error('Firestore Subjects snapshot error:', err))
+  }, handleErr)
 
   const unSubPlan = onSnapshot(planDocRef, (snapshot) => {
     if (snapshot.exists()) {
       onData({ plan: snapshot.data().plan as GeneratedPlan | null })
     }
-  }, (err) => console.error('Firestore Plan snapshot error:', err))
+  }, handleErr)
 
   return () => {
     unSubUser()
