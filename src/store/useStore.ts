@@ -25,6 +25,7 @@ interface PreplyState {
   firebaseStatus: 'configured' | 'unconfigured' | 'connecting' | 'connected'
   firebaseError: string | null
   initFirebase: () => void
+  manualSyncCloud: () => Promise<void>
 
   // ── User ──
   updateUser: (user: Partial<User>) => void
@@ -107,18 +108,19 @@ export const useStore = create<PreplyState>()(
             set({ firebaseUser: fbUser, firebaseStatus: 'connected', firebaseError: null })
 
             try {
-              // 1. Fetch Cloud Data First (so new device doesn't overwrite Cloud with empty state)
+              // 1. Fetch Cloud Data First
               const cloud = await fetchCloudData(fbUser.uid)
               if (cloud) {
                 const current = get()
-                if (cloud.subjects && cloud.subjects.length > 0) {
+                if (cloud.exists && cloud.subjects !== undefined) {
+                  // Cloud document exists -> set local store to Cloud data!
                   set({
                     subjects: cloud.subjects,
                     user: cloud.user ? { ...current.user, ...cloud.user } : current.user,
                     plan: cloud.plan !== undefined ? cloud.plan : current.plan,
                   })
                 } else if (current.subjects.length > 0) {
-                  // Cloud is empty, but local has subjects -> push local to cloud once
+                  // Cloud document doesn't exist yet -> upload local subjects to Cloud
                   triggerFirebaseSync(get)
                 }
               }
@@ -126,7 +128,7 @@ export const useStore = create<PreplyState>()(
               console.error('Failed to fetch initial cloud data:', err)
               if (err?.code === 'permission-denied') {
                 set({
-                  firebaseError: 'Firestore Permission Denied: Go to Firebase Console > Firestore Database > Rules and allow read, write.'
+                  firebaseError: 'Firestore Permission Denied: Go to Firebase Console > Firestore Database > Rules and allow read/write.'
                 })
               }
             }
@@ -150,6 +152,26 @@ export const useStore = create<PreplyState>()(
             set({ firebaseUser: null, firebaseStatus: 'configured', firebaseError: errorMsg || null })
           }
         })
+      },
+
+      manualSyncCloud: async () => {
+        const { firebaseUser } = get()
+        if (!firebaseUser) return
+        try {
+          const cloud = await fetchCloudData(firebaseUser.uid)
+          if (cloud && cloud.subjects !== undefined) {
+            const current = get()
+            set({
+              subjects: cloud.subjects,
+              user: cloud.user ? { ...current.user, ...cloud.user } : current.user,
+              plan: cloud.plan !== undefined ? cloud.plan : current.plan,
+            })
+          } else {
+            triggerFirebaseSync(get)
+          }
+        } catch (err: any) {
+          console.error('Manual sync failed:', err)
+        }
       },
 
       // ── User ──

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import {
   FloppyDisk, User, Clock, Cloud, CheckCircle, Warning, Database,
-  SignIn, SignOut, Lightning, ArrowDown, ArrowUp, Trash
+  SignIn, SignOut, Lightning, ArrowDown, ArrowUp, Trash, ArrowClockwise
 } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../../store/useStore'
@@ -11,9 +11,10 @@ import { formatTime } from '../../lib/utils'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
-  const { user, updateUser, subjects, plan, generatePlan, resetData, firebaseStatus, firebaseUser, firebaseError } = useStore()
+  const { user, updateUser, subjects, plan, generatePlan, resetData, firebaseStatus, firebaseUser, firebaseError, manualSyncCloud } = useStore()
   const [form, setForm] = useState({ ...user })
   const [saved, setSaved] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -26,6 +27,12 @@ export default function SettingsPage() {
     updateUser(form)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
+  }
+
+  const handleManualSync = async () => {
+    setSyncing(true)
+    await manualSyncCloud()
+    setTimeout(() => setSyncing(false), 800)
   }
 
   // Export JSON backup
@@ -256,6 +263,17 @@ export default function SettingsPage() {
             <Database size={20} className="text-primary-500" />
             <h2 className="font-heading font-bold text-base text-foreground">Database Storage & Backup</h2>
           </div>
+          {isSignedIn && (
+            <button
+              type="button"
+              onClick={handleManualSync}
+              disabled={syncing}
+              className="clay-btn-secondary text-xs px-3 py-1 flex items-center gap-1.5 min-h-[36px]"
+            >
+              <ArrowClockwise size={14} className={syncing ? 'animate-spin' : ''} />
+              <span>{syncing ? 'Syncing...' : 'Sync Cloud Data Now'}</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center justify-between p-3.5 rounded-clay-sm bg-muted border border-border flex-wrap gap-2">
