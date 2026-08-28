@@ -127,11 +127,12 @@ export async function syncPlanToFirestore(userId: string, plan: GeneratedPlan | 
 }
 
 /**
- * Real-time listener for user data
+ * Real-time listener for user data with empty document handling
  */
 export function subscribeToFirebaseData(
   userId: string,
-  onData: (data: { user?: User; subjects?: Subject[]; plan?: GeneratedPlan | null }) => void
+  onData: (data: { user?: User; subjects?: Subject[]; plan?: GeneratedPlan | null }) => void,
+  onEmptySubjects?: () => void
 ) {
   if (!db) return () => {}
 
@@ -143,19 +144,21 @@ export function subscribeToFirebaseData(
     if (snapshot.exists()) {
       onData({ user: snapshot.data() as User })
     }
-  })
+  }, (err) => console.error('Firestore User snapshot error:', err))
 
   const unSubSubjects = onSnapshot(subjectsDocRef, (snapshot) => {
-    if (snapshot.exists()) {
+    if (snapshot.exists() && snapshot.data()?.subjects) {
       onData({ subjects: snapshot.data().subjects as Subject[] })
+    } else if (onEmptySubjects) {
+      onEmptySubjects()
     }
-  })
+  }, (err) => console.error('Firestore Subjects snapshot error:', err))
 
   const unSubPlan = onSnapshot(planDocRef, (snapshot) => {
     if (snapshot.exists()) {
       onData({ plan: snapshot.data().plan as GeneratedPlan | null })
     }
-  })
+  }, (err) => console.error('Firestore Plan snapshot error:', err))
 
   return () => {
     unSubUser()

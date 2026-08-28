@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Subject, Topic, User, GeneratedPlan, StudySession } from '../types'
+import type { Subject, Topic, TopicStatus, User, GeneratedPlan, StudySession } from '../types'
 import { generateId, getSubjectColor } from '../lib/utils'
 import { generateStudyPlan, rescheduleMissedSession } from '../lib/planner'
 import {
@@ -55,6 +55,9 @@ interface PreplyState {
   getSubjectById: (subjectId: string) => Subject | undefined
 }
 
+// Active subscription cleaner
+let activeUnsubscribe: (() => void) | null = null
+
 // Helper to trigger cloud sync if authenticated
 function triggerFirebaseSync(get: () => PreplyState) {
   const { firebaseUser, user, subjects, plan } = get()
@@ -90,19 +93,34 @@ export const useStore = create<PreplyState>()(
         }
 
         initAuth((fbUser, errorMsg) => {
+          // Unsubscribe from previous listener if user changed
+          if (activeUnsubscribe) {
+            activeUnsubscribe()
+            activeUnsubscribe = null
+          }
+
           if (fbUser) {
             set({ firebaseUser: fbUser, firebaseStatus: 'connected', firebaseError: null })
 
-            subscribeToFirebaseData(fbUser.uid, (data) => {
-              const current = get()
-              set({
-                user: data.user ? { ...current.user, ...data.user } : current.user,
-                subjects: data.subjects ?? current.subjects,
-                plan: data.plan !== undefined ? data.plan : current.plan,
-              })
-            })
-
-            triggerFirebaseSync(get)
+            // Subscribe to Firestore cloud data
+            activeUnsubscribe = subscribeToFirebaseData(
+              fbUser.uid,
+              (cloudData) => {
+                const current = get()
+                set({
+                  user: cloudData.user ? { ...current.user, ...cloudData.user } : current.user,
+                  subjects: cloudData.subjects !== undefined ? cloudData.subjects : current.subjects,
+                  plan: cloudData.plan !== undefined ? cloudData.plan : current.plan,
+                })
+              },
+              () => {
+                // If cloud document is completely empty, push local state to Firestore once
+                const { subjects } = get()
+                if (subjects.length > 0) {
+                  triggerFirebaseSync(get)
+                }
+              }
+            )
           } else {
             set({ firebaseUser: null, firebaseStatus: 'configured', firebaseError: errorMsg || null })
           }
@@ -183,9 +201,7 @@ export const useStore = create<PreplyState>()(
           subjects: state.subjects.map(s =>
             s.id !== subjectId ? s : {
               ...s,
-              topics: s.topics.map(t =>
-                t.id === topicId ? { ...t, ...data } : t
-              ),
+              topics: s.topics.map(t => t.id === topicId ? { ...t, ...data } : t),
             }
           ),
         }))
@@ -200,14 +216,13 @@ export const useStore = create<PreplyState>()(
               topics: s.topics.filter(t => t.id !== topicId),
             }
           ),
-          plan: null,
         }))
         triggerFirebaseSync(get)
       },
 
       cycleTopicStatus: (subjectId, topicId) => {
         set(state => {
-          const next: Record<string, 'in_progress' | 'completed' | 'not_started'> = {
+          const next: Record<TopicStatus, TopicStatus> = {
             not_started: 'in_progress',
             in_progress: 'completed',
             completed: 'not_started',
@@ -235,44 +250,21 @@ export const useStore = create<PreplyState>()(
       // ── Plan ──
       generatePlan: () => {
         const { subjects, user } = get()
-        const plan = generateStudyPlan(subjects, user.dailyStudyHours, user.preferredStartTime)
-        set({ plan })
+        const newPlan = generateStudyPlan(subjects, user.dailyStudyHours, user.preferredStartTime)
+        set({ plan: newPlan })
         triggerFirebaseSync(get)
       },
 
       completeSession: (sessionId) => {
         set(state => {
           if (!state.plan) return {}
-          const completedAt = new Date().toISOString()
-          const topicId = state.plan.days
-            .flatMap(d => d.sessions)
-            .find(s => s.id === sessionId)?.topicId
-
           const updatedDays = state.plan.days.map(day => ({
             ...day,
             sessions: day.sessions.map(s =>
-              s.id === sessionId
-                ? { ...s, status: 'completed' as const, actualMinutes: s.plannedMinutes }
-                : s
+              s.id === sessionId ? { ...s, status: 'completed' as const, actualMinutes: s.plannedMinutes } : s
             ),
           }))
-
-          let updatedSubjects = state.subjects
-          if (topicId) {
-            updatedSubjects = state.subjects.map(s => ({
-              ...s,
-              topics: s.topics.map(t =>
-                t.id === topicId
-                  ? { ...t, status: 'completed' as const, completedAt }
-                  : t
-              ),
-            }))
-          }
-
-          return {
-            plan: { ...state.plan, days: updatedDays },
-            subjects: updatedSubjects,
-          }
+          return { plan: { ...state.plan, days: updatedDays } }
         })
         triggerFirebaseSync(get)
       },
@@ -325,26 +317,32 @@ export const useStore = create<PreplyState>()(
       getTodaySessions: () => {
         const { plan } = get()
         if (!plan) return []
-        const today = new Date().toISOString().split('T')[0]
-        return plan.days.find(d => d.date === today)?.sessions ?? []
+        const todayStr = new Date().toISOString().split('T')[0]
+        const todayPlan = plan.days.find(d => d.date === todayStr)
+        return todayPlan ? todayPlan.sessions : []
       },
 
       getTopicById: (topicId) => {
         const { subjects } = get()
         for (const s of subjects) {
-          const t = s.topics.find(tp => tp.id === topicId)
+          const t = s.topics.find(t => t.id === topicId)
           if (t) return t
         }
         return undefined
       },
 
       getSubjectById: (subjectId) => {
-        return get().subjects.find(s => s.id === subjectId)
+        const { subjects } = get()
+        return subjects.find(s => s.id === subjectId)
       },
     }),
     {
       name: 'preply-storage',
-      version: 2,
+      partialize: (state) => ({
+        user: state.user,
+        subjects: state.subjects,
+        plan: state.plan,
+      }),
     }
   )
 )
