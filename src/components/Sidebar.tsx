@@ -1,27 +1,11 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import {
-  House,
-  Books,
-  CalendarBlank,
-  ChartBar,
-  ListChecks,
-  Gear,
-  GraduationCap,
-  X,
-  User,
-  SignIn,
+  SquaresFour, Books, CalendarCheck, CalendarBlank, ChartBar, Gear, X,
+  GraduationCap, SignIn, SignOut
 } from '@phosphor-icons/react'
-import { cn, calcOverallProgress } from '../lib/utils'
+import { cn } from '../lib/utils'
 import { useStore } from '../store/useStore'
-import ProgressBar from './ProgressBar'
-
-const NAV_ITEMS = [
-  { to: '/',          icon: House,         label: 'Dashboard' },
-  { to: '/subjects',  icon: Books,         label: 'Subjects'  },
-  { to: '/planner',   icon: ListChecks,    label: 'Planner'   },
-  { to: '/calendar',  icon: CalendarBlank, label: 'Calendar'  },
-  { to: '/progress',  icon: ChartBar,      label: 'Progress'  },
-]
+import { logoutUser } from '../lib/firebase'
 
 interface SidebarProps {
   mobileOpen: boolean
@@ -29,22 +13,35 @@ interface SidebarProps {
   onOpenAuth: () => void
 }
 
-export default function Sidebar({ mobileOpen, onClose, onOpenAuth }: SidebarProps) {
-  const { subjects, user, firebaseUser } = useStore()
-  const overallProgress = calcOverallProgress(subjects)
-  const location = useLocation()
+const navItems = [
+  { name: 'Dashboard', path: '/', icon: SquaresFour },
+  { name: 'Subject Tracker', path: '/subjects', icon: Books },
+  { name: 'Study Planner', path: '/planner', icon: CalendarCheck },
+  { name: 'Calendar', path: '/calendar', icon: CalendarBlank },
+  { name: 'Progress & Analytics', path: '/progress', icon: ChartBar },
+  { name: 'Settings', path: '/settings', icon: Gear },
+]
 
+export default function Sidebar({ mobileOpen, onClose, onOpenAuth }: SidebarProps) {
+  const { firebaseUser, user } = useStore()
   const isAnonymous = firebaseUser?.isAnonymous ?? true
   const isSignedIn = firebaseUser && !isAnonymous
+
+  const handleAuthClick = () => {
+    if (isSignedIn) {
+      logoutUser()
+    } else {
+      onOpenAuth()
+    }
+  }
 
   return (
     <>
       {/* Mobile backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/30 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-30 lg:hidden"
           onClick={onClose}
-          aria-hidden="true"
         />
       )}
 
@@ -60,13 +57,17 @@ export default function Sidebar({ mobileOpen, onClose, onOpenAuth }: SidebarProp
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-5 border-b-2 border-border">
-          <div className="flex items-center gap-2.5">
+          <Link
+            to="/"
+            onClick={onClose}
+            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+          >
             <div className="w-8 h-8 rounded-clay-sm bg-primary-500 flex items-center justify-center"
                  style={{ boxShadow: '0 3px 0 0 #5B21B6' }}>
               <GraduationCap size={18} weight="fill" color="white" />
             </div>
             <span className="font-heading font-bold text-lg text-foreground tracking-tight">Preply</span>
-          </div>
+          </Link>
           <button
             onClick={onClose}
             className="lg:hidden p-1.5 rounded-clay-sm hover:bg-muted transition-colors"
@@ -78,70 +79,74 @@ export default function Sidebar({ mobileOpen, onClose, onOpenAuth }: SidebarProp
 
         {/* User info & Auth button */}
         <div className="px-4 py-4 border-b border-border space-y-2">
-          <div className="bg-muted rounded-clay-sm px-3 py-3">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-xs font-body text-muted-foreground">Studying as</span>
-              {isSignedIn ? (
-                <span className="clay-badge clay-badge-green text-[9px] py-0">Signed In</span>
-              ) : (
-                <span className="clay-badge clay-badge-amber text-[9px] py-0">Guest</span>
-              )}
-            </div>
-            <p className="font-heading font-semibold text-sm text-foreground truncate">{user.name}</p>
-            {isSignedIn && (
-              <p className="text-[11px] text-muted-foreground font-body truncate mt-0.5">{firebaseUser.email}</p>
-            )}
-
-            <div className="mt-2">
-              <ProgressBar value={overallProgress} size="sm" />
-              <p className="text-xs text-muted-foreground mt-1 font-body">{overallProgress}% syllabus complete</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-700 font-heading font-bold text-sm flex items-center justify-center flex-shrink-0">
+                {(user.name || 'S')[0].toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-heading font-bold text-foreground truncate">
+                  {user.name || 'Student'}
+                </p>
+                <p className="text-[11px] text-muted-foreground font-body truncate">
+                  {isSignedIn ? firebaseUser.email : 'Guest Mode'}
+                </p>
+              </div>
             </div>
           </div>
 
           <button
-            onClick={() => { onClose(); onOpenAuth(); }}
-            className="w-full flex items-center justify-center gap-2 text-xs font-heading font-semibold py-2 px-3 rounded-clay-sm bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-200 transition-colors"
+            onClick={handleAuthClick}
+            className={`w-full py-1.5 px-3 rounded-clay-sm font-heading font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors ${
+              isSignedIn
+                ? 'bg-muted text-muted-foreground hover:bg-red-50 hover:text-destructive'
+                : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
+            }`}
           >
-            {isSignedIn ? <User size={14} /> : <SignIn size={14} />}
-            <span>{isSignedIn ? 'Account Settings' : 'Sign In / Register'}</span>
+            {isSignedIn ? (
+              <>
+                <SignOut size={14} /> Sign Out
+              </>
+            ) : (
+              <>
+                <SignIn size={14} /> Sign In / Register
+              </>
+            )}
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto" aria-label="Main navigation">
-          {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              onClick={onClose}
-              className={({ isActive }) =>
-                cn('nav-link', isActive && 'active')
-              }
-            >
-              <Icon size={19} weight={location.pathname === to || (to === '/' && location.pathname === '/') ? 'fill' : 'regular'} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
+        {/* Navigation links */}
+        <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+          {navItems.map(item => {
+            const Icon = item.icon
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={onClose}
+                end={item.path === '/'}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 px-3.5 py-2.5 rounded-clay-sm text-sm font-heading font-semibold transition-all duration-150',
+                    isActive
+                      ? 'bg-primary-500 text-white shadow-clay-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  )
+                }
+              >
+                <Icon size={18} weight="duotone" />
+                <span>{item.name}</span>
+              </NavLink>
+            )
+          })}
         </nav>
 
-        {/* Settings */}
-        <div className="px-3 py-3 border-t border-border">
-          <NavLink
-            to="/settings"
-            onClick={onClose}
-            className={({ isActive }) => cn('nav-link', isActive && 'active')}
-          >
-            <Gear size={19} />
-            <span>Settings</span>
-          </NavLink>
-        </div>
-
-        {/* Tagline */}
-        <div className="px-5 py-3 border-t border-border">
-          <p className="text-xs text-muted-foreground font-body italic text-center">
-            Plan. Study. Finish.
-          </p>
+        {/* Footer tagline */}
+        <div className="p-4 border-t border-border bg-muted/30">
+          <div className="clay-card p-3 text-center space-y-1 bg-white/60">
+            <p className="text-xs font-heading font-bold text-primary-600">Plan. Study. Finish.</p>
+            <p className="text-[10px] text-muted-foreground font-body">Complete your syllabus before exam day</p>
+          </div>
         </div>
       </aside>
     </>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, Link } from 'react-router-dom'
 import { List, User, Sun, Moon, Timer } from '@phosphor-icons/react'
 import Sidebar from './Sidebar'
 import AuthModal from './AuthModal'
@@ -43,12 +43,12 @@ export default function Layout() {
             >
               <List size={20} className="text-foreground" />
             </button>
-            <div className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <div className="w-6 h-6 rounded-lg bg-primary-500 flex items-center justify-center">
                 <span className="text-white text-xs font-bold font-heading">P</span>
               </div>
               <span className="font-heading font-bold text-base text-foreground">Preply</span>
-            </div>
+            </Link>
           </div>
 
           <div className="flex items-center gap-2">
