@@ -1,5 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#7C3AED"/>
-  <path d="M8 22V10h8a4 4 0 0 1 0 8H8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M16 18l5 4" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Container Background -->
+  <rect width="48" height="48" rx="12" fill="#09090B"/>
+  <rect x="0.5" y="0.5" width="47" height="47" rx="11.5" stroke="rgba(255, 255, 255, 0.1)"/>
+  
+  <!-- Left Page -->
+  <path d="M24 16C20 14.2 14.5 14.5 11 16V33C14.5 31.5 20 31.2 24 33V16Z" fill="#6366F1"/>
+  
+  <!-- Right Page -->
+  <path d="M24 16C28 14.2 33.5 14.5 37 16V33C33.5 31.5 28 31.2 24 33V16Z" fill="#818CF8"/>
+  
+  <!-- Page Lines Left -->
+  <line x1="14" y1="21" x2="21" y2="20" stroke="white" stroke-opacity="0.8" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="14" y1="26" x2="21" y2="25" stroke="white" stroke-opacity="0.8" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Page Lines Right -->
+  <line x1="27" y1="20" x2="34" y2="21" stroke="white" stroke-opacity="0.8" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="27" y1="25" x2="34" y2="26" stroke="white" stroke-opacity="0.8" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Spine Line -->
+  <path d="M24 15.5V33.5" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+  
+  <!-- Bookmark Ribbon -->
+  <path d="M22.5 13H25.5V20.5L24 19.2L22.5 20.5V13Z" fill="#F43F5E"/>
 </svg>

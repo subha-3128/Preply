@@ -1,12 +1,13 @@
 import { NavLink, Link } from 'react-router-dom'
 import {
   SquaresFour, Books, CalendarCheck, CalendarBlank, ChartBar, Gear, X,
-  GraduationCap, SignIn, SignOut, DownloadSimple
+  SignIn, SignOut, DownloadSimple
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
 import { useStore } from '../store/useStore'
 import { logoutUser } from '../lib/firebase'
 import { usePWA } from '../hooks/usePWA'
+import Logo from './Logo'
 
 interface SidebarProps {
   mobileOpen: boolean
@@ -63,9 +64,7 @@ export default function Sidebar({ mobileOpen, onClose, onOpenAuth }: SidebarProp
             onClick={onClose}
             className="flex items-center gap-2.5 group"
           >
-            <div className="w-7 h-7 rounded-lg bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center transition-transform group-hover:scale-105">
-              <GraduationCap size={16} weight="fill" />
-            </div>
+            <Logo size={28} className="transition-transform group-hover:scale-105" />
             <span className="font-heading font-bold text-base text-foreground tracking-tight">Preply</span>
           </Link>
           <button

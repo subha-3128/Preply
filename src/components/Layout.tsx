@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Outlet, Link } from 'react-router-dom'
-import { List, User, Sun, Moon, Timer, DownloadSimple, GraduationCap } from '@phosphor-icons/react'
+import { List, User, Sun, Moon, Timer, DownloadSimple } from '@phosphor-icons/react'
 import Sidebar from './Sidebar'
 import AuthModal from './AuthModal'
 import PomodoroTimer from './PomodoroTimer'
 import PWAPrompt from './PWAPrompt'
+import Logo from './Logo'
 import { useStore } from '../store/useStore'
 import { usePWA } from '../hooks/usePWA'
 
@@ -46,9 +47,7 @@ export default function Layout() {
               <List size={18} />
             </button>
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center">
-                <GraduationCap size={13} weight="fill" />
-              </div>
+              <Logo size={24} />
               <span className="font-heading font-bold text-sm text-foreground tracking-tight">Preply</span>
             </Link>
           </div>
