@@ -13,22 +13,22 @@ import {
   subMonths,
 } from 'date-fns'
 import { useStore } from '../../store/useStore'
-import { cn } from '../../lib/utils'
+import { cn, formatTime } from '../../lib/utils'
 import type { StudySession } from '../../types'
 
 function CalendarDay({
   date,
   sessions,
   isExamDay,
-  examSubjectNames: _examSubjectNames,
   isCurrentMonth,
+  isSelected,
   onClick,
 }: {
   date: Date
   sessions: StudySession[]
   isExamDay: boolean
-  examSubjectNames: string[]
   isCurrentMonth: boolean
+  isSelected: boolean
   onClick: () => void
 }) {
   const today = isToday(date)
@@ -43,40 +43,52 @@ function CalendarDay({
     <button
       onClick={onClick}
       className={cn(
-        'relative min-h-[56px] sm:min-h-[72px] p-1 sm:p-2 rounded-clay-sm border-2 text-left transition-all duration-150',
-        'hover:shadow-clay-sm hover:border-primary-300',
-        today ? 'border-primary-500 bg-primary-50' : 'border-border bg-white',
+        'relative min-h-[52px] sm:min-h-[68px] p-1.5 sm:p-2 rounded-lg border text-left transition-colors cursor-pointer',
+        'hover:border-zinc-300 dark:hover:border-zinc-700',
+        isSelected ? 'ring-2 ring-primary border-primary bg-primary-50/30 dark:bg-primary-950/20' :
+        today ? 'border-zinc-400 dark:border-zinc-600 bg-zinc-100/70 dark:bg-zinc-800/40' :
+        'border-border bg-card',
         !isCurrentMonth && 'opacity-30',
-        isExamDay && !today && 'border-destructive bg-red-50',
+        isExamDay && !today && 'border-red-200 dark:border-red-900/50 bg-red-50/20'
       )}
       aria-label={`${format(date, 'MMM d')}: ${sessions.length} sessions${isExamDay ? ', Exam day' : ''}`}
     >
-      <span className={cn(
-        'text-xs font-heading font-bold',
-        today ? 'text-primary-700' : isExamDay ? 'text-destructive' : 'text-foreground'
-      )}>
-        {dayNum}
-      </span>
-      {today && (
-        <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary-500" />
-      )}
+      <div className="flex items-center justify-between">
+        <span className={cn(
+          'text-xs font-heading font-medium',
+          today ? 'font-bold text-foreground' : isExamDay ? 'text-destructive font-semibold' : 'text-foreground'
+        )}>
+          {dayNum}
+        </span>
+        {today && (
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+        )}
+      </div>
 
       {isExamDay && (
         <div className="mt-0.5">
-          <span className="clay-badge clay-badge-red text-[9px] px-1 py-0 leading-tight">EXAM</span>
+          <span className="clay-badge clay-badge-red text-[8px] sm:text-[9px] px-1 py-0 leading-tight">
+            EXAM
+          </span>
         </div>
       )}
 
       {hasAny && (
-        <div className="flex gap-0.5 flex-wrap mt-1">
+        <div className="flex gap-1 flex-wrap mt-1">
           {completed > 0 && (
-            <span className="text-[9px] bg-accent text-white rounded px-1 py-0 font-heading leading-tight">{completed} ✓</span>
+            <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40 rounded px-1 py-0 font-heading">
+              {completed} ✓
+            </span>
           )}
           {planned > 0 && (
-            <span className="text-[9px] bg-primary-500 text-white rounded px-1 py-0 font-heading leading-tight">{planned}</span>
+            <span className="text-[9px] bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/40 rounded px-1 py-0 font-heading">
+              {planned}
+            </span>
           )}
           {missed > 0 && (
-            <span className="text-[9px] bg-destructive text-white rounded px-1 py-0 font-heading leading-tight">{missed} !</span>
+            <span className="text-[9px] bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/40 rounded px-1 py-0 font-heading">
+              {missed} !
+            </span>
           )}
         </div>
       )}
@@ -116,22 +128,23 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="page-title">Calendar</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg p-1">
           <button
             onClick={() => setCurrentMonth(m => subMonths(m, 1))}
-            className="clay-btn-secondary p-2"
+            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             aria-label="Previous month"
           >
             <CaretLeft size={16} />
           </button>
-          <span className="font-heading font-semibold text-base px-2 min-w-[140px] text-center">
+          <span className="font-heading font-medium text-xs sm:text-sm px-2 min-w-[120px] text-center text-foreground">
             {format(currentMonth, 'MMMM yyyy')}
           </span>
           <button
             onClick={() => setCurrentMonth(m => addMonths(m, 1))}
-            className="clay-btn-secondary p-2"
+            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             aria-label="Next month"
           >
             <CaretRight size={16} />
@@ -139,28 +152,30 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      {/* Legend */}
       <div className="flex items-center gap-4 flex-wrap text-xs font-body text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-primary-500" /> Planned
+          <span className="w-2 h-2 rounded-full bg-primary" /> Planned
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-accent" /> Completed
+          <span className="w-2 h-2 rounded-full bg-accent" /> Completed
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-destructive" /> Missed / Exam
+          <span className="w-2 h-2 rounded-full bg-destructive" /> Exam / Missed
         </span>
       </div>
 
-      <div className="clay-card p-4 overflow-hidden">
-        <div className="grid grid-cols-7 mb-2">
+      {/* Month Calendar Grid */}
+      <div className="clay-card p-3 sm:p-4 overflow-hidden bg-card">
+        <div className="grid grid-cols-7 mb-1.5">
           {DAY_LABELS.map(d => (
-            <div key={d} className="text-center text-xs font-heading font-semibold text-muted-foreground py-1">
+            <div key={d} className="text-center text-xs font-heading font-medium text-muted-foreground py-1">
               {d}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1.5">
+        <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
           {Array.from({ length: startPad }).map((_, i) => (
             <div key={`blank-${i}`} />
           ))}
@@ -172,8 +187,8 @@ export default function CalendarPage() {
                 date={date}
                 sessions={sessionsByDate.get(dateStr) ?? []}
                 isExamDay={examDates.has(dateStr)}
-                examSubjectNames={examDates.get(dateStr) ?? []}
                 isCurrentMonth={isSameMonth(date, currentMonth)}
+                isSelected={selectedDate === dateStr}
                 onClick={() => setSelectedDate(prev => prev === dateStr ? null : dateStr)}
               />
             )
@@ -181,38 +196,39 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      {/* Selected Date Detail Drawer */}
       {selectedDate && (selectedSessions.length > 0 || selectedExams.length > 0) && (
-        <div className="clay-card p-5 animate-slide-in-up">
-          <h2 className="section-title mb-3">
-            {format(parseISO(selectedDate), 'EEEE, dd MMM yyyy')}
+        <div className="clay-card p-5 space-y-3 animate-slide-in-up bg-card">
+          <h2 className="section-title">
+            {format(parseISO(selectedDate), 'EEEE, MMMM d, yyyy')}
           </h2>
 
           {selectedExams.length > 0 && (
-            <div className="bg-red-50 border-2 border-red-200 rounded-clay-sm px-3 py-2 mb-3">
-              <p className="text-sm font-heading font-semibold text-destructive">
-                📅 Exam{selectedExams.length > 1 ? 's' : ''}: {selectedExams.join(', ')}
-              </p>
+            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-lg px-3 py-2 text-xs font-heading font-medium text-red-700 dark:text-red-300">
+              Exam: {selectedExams.join(', ')}
             </div>
           )}
 
           {selectedSessions.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-1.5 pt-1">
               {selectedSessions.map(session => {
                 const { getTopicById, getSubjectById } = useStore.getState()
                 const topic = getTopicById(session.topicId)
                 const subject = getSubjectById(session.subjectId)
                 if (!topic || !subject) return null
                 return (
-                  <div key={session.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: subject.color }} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-body font-semibold text-foreground">{topic.name}</p>
-                      <p className="text-xs text-muted-foreground font-body">{subject.name}</p>
+                  <div key={session.id} className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: subject.color || '#6366F1' }} />
+                      <div className="min-w-0">
+                        <p className="font-heading font-medium text-foreground truncate">{topic.name}</p>
+                        <p className="text-muted-foreground font-body text-[11px] truncate">{subject.name}</p>
+                      </div>
                     </div>
-                    <div className="text-right text-xs text-muted-foreground font-body">
-                      <p>{session.startTime} – {session.endTime}</p>
+                    <div className="text-right text-muted-foreground font-body flex-shrink-0">
+                      <span>{formatTime(session.startTime)} – {formatTime(session.endTime)}</span>
                       <span className={cn(
-                        'clay-badge text-[10px]',
+                        'clay-badge text-[10px] ml-2 py-0',
                         session.status === 'completed' ? 'clay-badge-green' :
                         session.status === 'missed' ? 'clay-badge-red' :
                         session.status === 'skipped' ? 'clay-badge-gray' : 'clay-badge-purple'
@@ -225,7 +241,7 @@ export default function CalendarPage() {
               })}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground font-body">No study sessions on this day.</p>
+            <p className="text-xs text-muted-foreground font-body">No study sessions allocated for this date.</p>
           )}
         </div>
       )}

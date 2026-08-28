@@ -55,30 +55,30 @@ function SubjectModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-3 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="clay-card p-5 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in"
+        className="clay-card p-6 w-full max-w-md max-h-[90vh] overflow-y-auto animate-scale-in bg-card"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4 border-b border-border pb-3 sticky top-0 bg-white dark:bg-slate-800 z-10">
+        <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
           <div className="flex items-center gap-2">
-            <Books size={22} className="text-primary-500" />
-            <h2 className="font-heading font-bold text-lg text-foreground">
-              {isEditing ? 'Edit Subject' : 'Add Subject Tracker'}
+            <Books size={18} className="text-primary" />
+            <h2 className="font-heading font-semibold text-sm text-foreground">
+              {isEditing ? 'Edit Subject Tracker' : 'New Subject Tracker'}
             </h2>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-muted rounded-clay-sm transition-colors" aria-label="Close modal">
-            <X size={18} className="text-muted-foreground" />
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors" aria-label="Close modal">
+            <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="text-xs font-semibold text-muted-foreground font-heading block mb-1">
+            <label className="text-xs font-heading font-medium text-muted-foreground block mb-1">
               Subject Name *
             </label>
             <input
-              className="clay-input"
+              className="clay-input text-xs"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Mathematics, Physics, History"
@@ -89,7 +89,7 @@ function SubjectModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-muted-foreground font-heading block mb-1">
+              <label className="text-xs font-heading font-medium text-muted-foreground block mb-1">
                 Exam Date *
               </label>
               <input
@@ -101,7 +101,7 @@ function SubjectModal({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-muted-foreground font-heading block mb-1">
+              <label className="text-xs font-heading font-medium text-muted-foreground block mb-1">
                 Exam Time *
               </label>
               <input
@@ -116,7 +116,7 @@ function SubjectModal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-muted-foreground font-heading block mb-1">
+              <label className="text-xs font-heading font-medium text-muted-foreground block mb-1">
                 Daily Study Hours *
               </label>
               <input
@@ -131,7 +131,7 @@ function SubjectModal({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-muted-foreground font-heading block mb-1">
+              <label className="text-xs font-heading font-medium text-muted-foreground block mb-1">
                 Priority *
               </label>
               <select
@@ -139,20 +139,20 @@ function SubjectModal({
                 value={priority}
                 onChange={e => setPriority(e.target.value as Priority)}
               >
-                <option value="high">🔥 High</option>
-                <option value="medium">🟡 Medium</option>
-                <option value="low">⚪ Low</option>
+                <option value="high">High Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="low">Low Priority</option>
               </select>
             </div>
           </div>
 
-          <div className="flex gap-2 justify-end pt-2 border-t border-border">
-            <button type="button" onClick={onClose} className="clay-btn-secondary text-xs px-4 py-2">
+          <div className="flex gap-2 justify-end pt-3 border-t border-border">
+            <button type="button" onClick={onClose} className="clay-btn-secondary text-xs px-3.5 py-1.5">
               Cancel
             </button>
-            <button type="submit" className="clay-btn-primary text-xs px-5 py-2 flex items-center gap-1.5">
-              <FloppyDisk size={15} />
-              {isEditing ? 'Save Changes' : 'Create Tracker'}
+            <button type="submit" className="clay-btn-primary text-xs px-4 py-1.5 flex items-center gap-1.5">
+              <FloppyDisk size={14} />
+              <span>{isEditing ? 'Save Changes' : 'Create Tracker'}</span>
             </button>
           </div>
         </form>
@@ -178,21 +178,21 @@ function SubjectCard({
   const totalDaysStudied = (subject.completedDates || []).length
 
   return (
-    <div className="clay-card p-5 space-y-4 animate-fade-in flex flex-col justify-between">
+    <div className="clay-card p-4 space-y-3.5 flex flex-col justify-between">
       <div>
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div
-              className="w-4 h-4 rounded-full flex-shrink-0"
-              style={{ backgroundColor: subject.color }}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style={{ backgroundColor: subject.color || '#6366F1' }}
             />
-            <h3 className="font-heading font-bold text-lg text-foreground truncate">{subject.name}</h3>
+            <h3 className="font-heading font-semibold text-sm text-foreground truncate">{subject.name}</h3>
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <span className={cn(
-              'clay-badge text-xs',
+              'clay-badge text-[10px] py-0',
               subject.priority === 'high' ? 'clay-badge-red' :
               subject.priority === 'medium' ? 'clay-badge-amber' : 'clay-badge-gray'
             )}>
@@ -200,10 +200,10 @@ function SubjectCard({
             </span>
             <button
               onClick={onEdit}
-              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-clay-sm transition-colors"
+              className="p-1 text-muted-foreground hover:text-foreground rounded-md transition-colors"
               aria-label="Edit subject"
             >
-              <PencilSimple size={16} />
+              <PencilSimple size={14} />
             </button>
             <button
               onClick={() => {
@@ -211,26 +211,26 @@ function SubjectCard({
                   deleteSubject(subject.id)
                 }
               }}
-              className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-red-50 rounded-clay-sm transition-colors"
+              className="p-1 text-muted-foreground hover:text-destructive rounded-md transition-colors"
               aria-label="Delete subject"
             >
-              <Trash size={16} />
+              <Trash size={14} />
             </button>
           </div>
         </div>
 
         {/* Subject Details Grid */}
-        <div className="bg-muted rounded-clay-sm p-3.5 space-y-2 mb-3">
-          <div className="flex items-center justify-between text-xs font-body">
+        <div className="bg-muted/40 rounded-lg p-2.5 space-y-1.5 mb-2.5 border border-border/50 text-xs font-body">
+          <div className="flex items-center justify-between">
             <span className="text-muted-foreground flex items-center gap-1">
-              <CalendarBlank size={14} className="text-primary-500" /> Exam Date:
+              <CalendarBlank size={13} /> Exam Date:
             </span>
-            <span className="font-heading font-semibold text-foreground">
+            <span className="font-heading font-medium text-foreground">
               {subject.examDate ? formatDateShort(subject.examDate) : 'Not set'}
               {daysLeft !== null && daysLeft >= 0 && (
                 <span className={cn(
-                  'ml-1 font-bold',
-                  daysLeft <= 3 ? 'text-destructive' : daysLeft <= 7 ? 'text-yellow-600' : 'text-primary-600 font-semibold'
+                  'ml-1 font-semibold',
+                  daysLeft <= 3 ? 'text-destructive' : daysLeft <= 7 ? 'text-amber-600 dark:text-amber-400' : 'text-primary'
                 )}>
                   ({daysLeft === 0 ? 'Today!' : `${daysLeft}d left`})
                 </span>
@@ -238,60 +238,61 @@ function SubjectCard({
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-xs font-body">
+          <div className="flex items-center justify-between">
             <span className="text-muted-foreground flex items-center gap-1">
-              <Clock size={14} className="text-primary-500" /> Exam Time:
+              <Clock size={13} /> Exam Time:
             </span>
-            <span className="font-heading font-semibold text-foreground">
+            <span className="font-heading font-medium text-foreground">
               {subject.examTime ? formatTime(subject.examTime) : 'Not set'}
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-xs font-body">
+          <div className="flex items-center justify-between">
             <span className="text-muted-foreground flex items-center gap-1">
-              <HourglassMedium size={14} className="text-primary-500" /> Daily Target:
+              <HourglassMedium size={13} /> Target:
             </span>
-            <span className="font-heading font-bold text-primary-600">
-              {subject.dailyStudyHours} hrs / day
+            <span className="font-heading font-medium text-foreground">
+              {subject.dailyStudyHours}h / day
             </span>
           </div>
         </div>
 
-        {/* Start Focus Timer Launcher Button */}
+        {/* Start Focus Timer Launcher */}
         <button
           type="button"
           onClick={() => onStartTimer(subject.id)}
-          className="w-full py-2 px-3 rounded-clay-sm bg-primary-50 hover:bg-primary-100 text-primary-700 font-heading font-semibold text-xs flex items-center justify-center gap-1.5 border border-primary-200 transition-colors"
+          className="w-full py-1.5 px-3 rounded-lg bg-card hover:bg-muted text-foreground font-heading font-medium text-xs flex items-center justify-center gap-1.5 border border-border transition-colors cursor-pointer"
         >
-          <Timer size={15} /> Start 25m Focus Timer
+          <Timer size={14} /> <span>Focus Timer (25m)</span>
         </button>
       </div>
 
       {/* Today's Work Tracker (Yes / No) */}
-      <div className="border-t border-border pt-3 space-y-2">
-        <div className="flex items-center justify-between text-xs font-heading font-semibold text-muted-foreground">
-          <span>Today's Work Tracker</span>
-          <span className="text-[11px] font-body text-primary-600">{totalDaysStudied} days studied total</span>
+      <div className="border-t border-border pt-3 space-y-1.5">
+        <div className="flex items-center justify-between text-xs font-heading text-muted-foreground">
+          <span>Today's Completion</span>
+          <span className="text-[11px] font-body text-muted-foreground">{totalDaysStudied} days total</span>
         </div>
 
         <button
           type="button"
           onClick={() => toggleTodayWork(subject.id)}
-          className={`w-full py-3 px-4 rounded-clay-sm font-heading font-bold text-sm flex items-center justify-center gap-2.5 transition-all duration-150 cursor-pointer ${
+          className={cn(
+            'w-full py-2 px-3 rounded-lg font-heading font-medium text-xs flex items-center justify-center gap-2 transition-all cursor-pointer border',
             isDoneToday
-              ? 'clay-btn-accent text-white shadow-clay-sm'
-              : 'bg-primary-50 text-primary-700 border-2 border-primary-300 hover:bg-primary-100 shadow-clay-sm'
-          }`}
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/60'
+              : 'bg-card text-muted-foreground hover:text-foreground border-border hover:bg-muted'
+          )}
         >
           {isDoneToday ? (
             <>
-              <CheckCircle size={20} weight="fill" />
-              <span>Today's Work: YES (Done ✅)</span>
+              <CheckCircle size={16} weight="fill" className="text-accent" />
+              <span>Today: Done (Yes)</span>
             </>
           ) : (
             <>
-              <Circle size={20} className="text-primary-500" />
-              <span>Today's Work: NO (Pending ⏳)</span>
+              <Circle size={16} className="text-muted-foreground" />
+              <span>Today: Pending (Mark Done)</span>
             </>
           )}
         </button>
@@ -332,67 +333,68 @@ export default function SubjectsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="page-title">Subject Tracker</h1>
-          <p className="text-muted-foreground font-body text-sm mt-0.5">
-            Track daily study completion (Yes/No) for each of your exam subjects
+          <p className="text-muted-foreground font-body text-xs sm:text-sm mt-0.5">
+            Monitor daily study completion for all your syllabus subjects
           </p>
         </div>
 
         <button
           onClick={handleOpenAdd}
-          className="clay-btn-primary flex items-center gap-2"
+          className="clay-btn-primary flex items-center gap-1.5"
           id="add-subject-btn"
         >
-          <Plus size={16} />
-          Add Subject
+          <Plus size={15} />
+          <span>Add Subject</span>
         </button>
       </div>
 
-      {/* Today's Tracker Progress Card */}
+      {/* Today's Tracker Progress Overview */}
       {subjects.length > 0 && (
-        <div className="clay-card p-5 space-y-3 border-2 border-primary-200 shadow-clay-sm">
+        <div className="clay-card p-4 space-y-2.5">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <p className="text-xs font-heading font-bold text-primary-600 uppercase tracking-wide">
-                Today's Subject Completion
-              </p>
-              <h2 className="font-heading font-bold text-lg text-foreground mt-0.5">
+              <span className="text-xs font-heading font-medium text-muted-foreground uppercase tracking-wider">
+                Daily Completion
+              </span>
+              <h2 className="font-heading font-semibold text-sm sm:text-base text-foreground mt-0.5">
                 {completedTodayCount} of {subjects.length} Subject{subjects.length > 1 ? 's' : ''} Completed Today
               </h2>
             </div>
-            <span className={`clay-badge text-sm font-heading font-bold px-3 py-1 ${
+            <span className={cn(
+              'clay-badge text-xs font-heading font-semibold px-2.5 py-0.5',
               completionPercentage === 100 ? 'clay-badge-green' :
               completionPercentage > 0 ? 'clay-badge-purple' : 'clay-badge-gray'
-            }`}>
+            )}>
               {completionPercentage}% Done
             </span>
           </div>
 
-          <ProgressBar value={completionPercentage} size="lg" />
+          <ProgressBar value={completionPercentage} size="md" />
         </div>
       )}
 
       {/* Subject List Grid */}
       {subjects.length === 0 ? (
-        <div className="clay-card p-12 text-center space-y-4">
-          <div className="w-16 h-16 rounded-clay bg-primary-50 flex items-center justify-center mx-auto">
-            <Books size={32} className="text-primary-500" />
+        <div className="clay-card p-10 text-center space-y-4">
+          <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mx-auto text-muted-foreground">
+            <Books size={24} />
           </div>
-          <div>
-            <h2 className="font-heading font-semibold text-lg text-foreground">No Subjects Added Yet</h2>
-            <p className="text-muted-foreground text-sm font-body mt-1 max-w-sm mx-auto">
+          <div className="space-y-1">
+            <h2 className="font-heading font-semibold text-base text-foreground">No Subjects Added Yet</h2>
+            <p className="text-muted-foreground text-xs sm:text-sm font-body max-w-sm mx-auto">
               Add your subjects with exam dates, times, and daily target study hours to start tracking.
             </p>
           </div>
           <button
             onClick={handleOpenAdd}
-            className="clay-btn-primary mx-auto flex items-center gap-2"
+            className="clay-btn-primary mx-auto flex items-center gap-1.5"
           >
-            <Plus size={16} />
-            Add First Subject
+            <Plus size={15} />
+            <span>Add First Subject</span>
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {subjects.map(subject => (
             <SubjectCard
               key={subject.id}

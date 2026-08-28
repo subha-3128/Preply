@@ -2,7 +2,7 @@ import { cn } from '../lib/utils'
 
 interface ProgressBarProps {
   value: number      // 0-100
-  color?: string     // Tailwind gradient or custom
+  color?: string
   size?: 'sm' | 'md' | 'lg'
   showLabel?: boolean
   label?: string
@@ -19,32 +19,29 @@ export default function ProgressBar({
   className,
   animated = true,
 }: ProgressBarProps) {
-  const heights = { sm: 'h-2', md: 'h-3', lg: 'h-4' }
+  const heights = { sm: 'h-1', md: 'h-1.5', lg: 'h-2' }
   const clampedValue = Math.min(100, Math.max(0, value))
-
-  const fillColor = color ?? (
-    clampedValue >= 80 ? 'linear-gradient(90deg, #059669, #10B981)' :
-    clampedValue >= 50 ? 'linear-gradient(90deg, #7C3AED, #8B5CF6)' :
-    clampedValue >= 25 ? 'linear-gradient(90deg, #D97706, #F59E0B)' :
-    'linear-gradient(90deg, #DC2626, #EF4444)'
-  )
 
   return (
     <div className={cn('w-full', className)}>
       {(showLabel || label) && (
-        <div className="flex items-center justify-between mb-1.5">
-          {label && <span className="text-xs font-semibold text-muted-foreground font-body">{label}</span>}
+        <div className="flex items-center justify-between mb-1.5 text-xs font-body">
+          {label && <span className="text-muted-foreground font-medium">{label}</span>}
           {showLabel && (
-            <span className="text-xs font-bold text-foreground font-heading ml-auto">{clampedValue}%</span>
+            <span className="font-heading font-semibold text-foreground ml-auto">{clampedValue}%</span>
           )}
         </div>
       )}
-      <div className={cn('progress-bar-track', heights[size])}>
+      <div className={cn('w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden', heights[size])}>
         <div
-          className={cn('h-full rounded-full', animated && 'transition-all duration-700 ease-out')}
+          className={cn(
+            'h-full rounded-full transition-all duration-500 ease-out',
+            !color && (clampedValue === 100 ? 'bg-emerald-500' : 'bg-primary'),
+            animated && 'transition-all duration-500 ease-out'
+          )}
           style={{
             width: `${clampedValue}%`,
-            background: fillColor,
+            ...(color ? { backgroundColor: color } : {}),
           }}
           role="progressbar"
           aria-valuenow={clampedValue}

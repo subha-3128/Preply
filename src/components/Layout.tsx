@@ -1,16 +1,19 @@
 import { useState } from 'react'
 import { Outlet, Link } from 'react-router-dom'
-import { List, User, Sun, Moon, Timer } from '@phosphor-icons/react'
+import { List, User, Sun, Moon, Timer, DownloadSimple, GraduationCap } from '@phosphor-icons/react'
 import Sidebar from './Sidebar'
 import AuthModal from './AuthModal'
 import PomodoroTimer from './PomodoroTimer'
+import PWAPrompt from './PWAPrompt'
 import { useStore } from '../store/useStore'
+import { usePWA } from '../hooks/usePWA'
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [timerModalOpen, setTimerModalOpen] = useState(false)
   const { firebaseUser, user, updateUser } = useStore()
+  const { canInstall, installPWA } = usePWA()
 
   const isAnonymous = firebaseUser?.isAnonymous ?? true
   const isSignedIn = firebaseUser && !isAnonymous
@@ -21,7 +24,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex text-foreground">
+    <div className="min-h-screen bg-background flex text-foreground font-sans">
       {/* Sidebar */}
       <Sidebar
         mobileOpen={sidebarOpen}
@@ -29,103 +32,116 @@ export default function Layout() {
         onOpenAuth={() => setAuthModalOpen(true)}
       />
 
-      {/* Main content */}
+      {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
         {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b-2 border-border sticky top-0 z-20"
-                style={{ boxShadow: '0 2px 8px rgba(124,58,237,0.06)' }}>
-          <div className="flex items-center gap-3">
+        <header className="lg:hidden flex items-center justify-between px-4 py-2.5 bg-card/80 backdrop-blur-md border-b border-border sticky top-0 z-30">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-clay-sm hover:bg-muted transition-colors"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Open navigation menu"
               id="mobile-menu-btn"
             >
-              <List size={20} className="text-foreground" />
+              <List size={18} />
             </button>
-            <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <div className="w-6 h-6 rounded-lg bg-primary-500 flex items-center justify-center">
-                <span className="text-white text-xs font-bold font-heading">P</span>
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center">
+                <GraduationCap size={13} weight="fill" />
               </div>
-              <span className="font-heading font-bold text-base text-foreground">Preply</span>
+              <span className="font-heading font-bold text-sm text-foreground tracking-tight">Preply</span>
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {canInstall && (
+              <button
+                onClick={installPWA}
+                className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-foreground hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                aria-label="Install App"
+                title="Install App"
+              >
+                <DownloadSimple size={15} />
+              </button>
+            )}
+
             <button
               onClick={() => setTimerModalOpen(true)}
-              className="p-2 rounded-clay-sm bg-primary-50 text-primary-600 hover:bg-primary-100 border border-primary-200 transition-colors"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Open Focus Timer"
             >
-              <Timer size={18} />
+              <Timer size={16} />
             </button>
 
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-clay-sm bg-muted text-foreground hover:bg-primary-50 transition-colors border border-border"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Toggle theme"
             >
-              {isDark ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-primary-600" />}
+              {isDark ? <Sun size={16} className="text-zinc-300" /> : <Moon size={16} className="text-zinc-600" />}
             </button>
 
             <button
               onClick={() => setAuthModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-clay-sm bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-heading font-semibold border border-primary-200"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-heading font-medium bg-muted text-foreground hover:bg-zinc-200/70 dark:hover:bg-zinc-800 transition-colors"
               aria-label="User Account"
             >
-              <User size={14} />
-              <span className="truncate max-w-[90px]">{isSignedIn ? user.name : 'Sign In'}</span>
+              <User size={13} />
+              <span className="truncate max-w-[80px]">{isSignedIn ? user.name : 'Account'}</span>
             </button>
           </div>
         </header>
 
         {/* Desktop topbar */}
-        <header className="hidden lg:flex items-center justify-end gap-3 px-8 py-4 border-b border-border bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+        <header className="hidden lg:flex items-center justify-end gap-2 px-8 py-3.5 border-b border-border bg-card/60 backdrop-blur-sm sticky top-0 z-20">
+          {canInstall && (
+            <button
+              onClick={installPWA}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-heading font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors cursor-pointer"
+              aria-label="Install Desktop App"
+            >
+              <DownloadSimple size={14} />
+              <span>Install App</span>
+            </button>
+          )}
+
           <button
             onClick={() => setTimerModalOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-clay-sm bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-heading font-semibold border border-primary-200 transition-colors shadow-clay-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-heading font-medium text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors cursor-pointer"
             aria-label="Focus Timer"
           >
-            <Timer size={16} />
+            <Timer size={14} />
             <span>Focus Timer</span>
           </button>
 
           <button
             onClick={toggleTheme}
-            className="flex items-center gap-2 px-3 py-2 rounded-clay-sm bg-muted hover:bg-primary-50 text-foreground text-xs font-heading font-semibold border border-border transition-colors shadow-clay-sm cursor-pointer"
-            aria-label="Toggle Dark Mode"
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors cursor-pointer"
+            aria-label="Toggle Theme"
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            {isDark ? (
-              <>
-                <Sun size={16} className="text-yellow-400" />
-                <span>Light Mode</span>
-              </>
-            ) : (
-              <>
-                <Moon size={16} className="text-primary-600" />
-                <span>Dark Mode</span>
-              </>
-            )}
+            {isDark ? <Sun size={15} className="text-zinc-300" /> : <Moon size={15} className="text-zinc-600" />}
           </button>
 
           <button
             onClick={() => setAuthModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-clay-sm bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-heading font-semibold border border-primary-200 transition-colors shadow-clay-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-heading font-medium bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors shadow-subtle cursor-pointer ml-1"
           >
-            <User size={16} />
-            <span>{isSignedIn ? `Account (${user.name})` : 'Sign In / Register'}</span>
+            <User size={13} />
+            <span>{isSignedIn ? user.name : 'Sign In'}</span>
           </button>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-6xl w-full mx-auto" id="main-content">
+        <main className="flex-1 px-4 py-6 md:px-8 md:py-8 max-w-5xl w-full mx-auto" id="main-content">
           <Outlet />
         </main>
       </div>
 
-      {/* Modals */}
+      {/* Modals & PWA Prompts */}
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       <PomodoroTimer isOpen={timerModalOpen} onClose={() => setTimerModalOpen(false)} />
+      <PWAPrompt />
     </div>
   )
 }

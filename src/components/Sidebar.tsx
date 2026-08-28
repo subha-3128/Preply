@@ -1,11 +1,12 @@
 import { NavLink, Link } from 'react-router-dom'
 import {
   SquaresFour, Books, CalendarCheck, CalendarBlank, ChartBar, Gear, X,
-  GraduationCap, SignIn, SignOut
+  GraduationCap, SignIn, SignOut, DownloadSimple
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
 import { useStore } from '../store/useStore'
 import { logoutUser } from '../lib/firebase'
+import { usePWA } from '../hooks/usePWA'
 
 interface SidebarProps {
   mobileOpen: boolean
@@ -24,6 +25,7 @@ const navItems = [
 
 export default function Sidebar({ mobileOpen, onClose, onOpenAuth }: SidebarProps) {
   const { firebaseUser, user } = useStore()
+  const { canInstall, installPWA } = usePWA()
   const isAnonymous = firebaseUser?.isAnonymous ?? true
   const isSignedIn = firebaseUser && !isAnonymous
 
@@ -40,7 +42,7 @@ export default function Sidebar({ mobileOpen, onClose, onOpenAuth }: SidebarProp
       {/* Mobile backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-30 lg:hidden"
+          className="fixed inset-0 bg-black/30 backdrop-blur-xs z-40 lg:hidden"
           onClick={onClose}
         />
       )}
@@ -48,75 +50,35 @@ export default function Sidebar({ mobileOpen, onClose, onOpenAuth }: SidebarProp
       {/* Sidebar panel */}
       <aside
         className={cn(
-          'fixed top-0 left-0 h-full w-64 bg-white border-r-2 border-border z-40',
-          'flex flex-col transition-transform duration-300 ease-out',
+          'fixed top-0 left-0 h-full w-60 bg-card border-r border-border z-40',
+          'flex flex-col transition-transform duration-200 ease-out',
           'lg:translate-x-0 lg:static lg:z-auto',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
-        style={{ boxShadow: '4px 0 20px rgba(124,58,237,0.08)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-5 border-b-2 border-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <Link
             to="/"
             onClick={onClose}
-            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2.5 group"
           >
-            <div className="w-8 h-8 rounded-clay-sm bg-primary-500 flex items-center justify-center"
-                 style={{ boxShadow: '0 3px 0 0 #5B21B6' }}>
-              <GraduationCap size={18} weight="fill" color="white" />
+            <div className="w-7 h-7 rounded-lg bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center transition-transform group-hover:scale-105">
+              <GraduationCap size={16} weight="fill" />
             </div>
-            <span className="font-heading font-bold text-lg text-foreground tracking-tight">Preply</span>
+            <span className="font-heading font-bold text-base text-foreground tracking-tight">Preply</span>
           </Link>
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-clay-sm hover:bg-muted transition-colors"
+            className="lg:hidden p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             aria-label="Close sidebar"
           >
-            <X size={18} className="text-muted-foreground" />
-          </button>
-        </div>
-
-        {/* User info & Auth button */}
-        <div className="px-4 py-4 border-b border-border space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-700 font-heading font-bold text-sm flex items-center justify-center flex-shrink-0">
-                {(user.name || 'S')[0].toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-heading font-bold text-foreground truncate">
-                  {user.name || 'Student'}
-                </p>
-                <p className="text-[11px] text-muted-foreground font-body truncate">
-                  {isSignedIn ? firebaseUser.email : 'Guest Mode'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={handleAuthClick}
-            className={`w-full py-1.5 px-3 rounded-clay-sm font-heading font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors ${
-              isSignedIn
-                ? 'bg-muted text-muted-foreground hover:bg-red-50 hover:text-destructive'
-                : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
-            }`}
-          >
-            {isSignedIn ? (
-              <>
-                <SignOut size={14} /> Sign Out
-              </>
-            ) : (
-              <>
-                <SignIn size={14} /> Sign In / Register
-              </>
-            )}
+            <X size={16} />
           </button>
         </div>
 
         {/* Navigation links */}
-        <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {navItems.map(item => {
             const Icon = item.icon
             return (
@@ -127,25 +89,61 @@ export default function Sidebar({ mobileOpen, onClose, onOpenAuth }: SidebarProp
                 end={item.path === '/'}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-3.5 py-2.5 rounded-clay-sm text-sm font-heading font-semibold transition-all duration-150',
+                    'flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-heading font-medium transition-colors',
                     isActive
-                      ? 'bg-primary-500 text-white shadow-clay-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      ? 'bg-zinc-100 dark:bg-zinc-800/80 text-foreground font-semibold'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
                   )
                 }
               >
-                <Icon size={18} weight="duotone" />
+                <Icon size={16} weight="duotone" className="flex-shrink-0" />
                 <span>{item.name}</span>
               </NavLink>
             )
           })}
+
+          {/* Minimalist Install App Button */}
+          {canInstall && (
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  installPWA()
+                  onClose()
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-heading font-medium text-primary hover:bg-primary-50 dark:hover:bg-primary-950/30 transition-colors"
+              >
+                <DownloadSimple size={15} weight="bold" />
+                <span>Install Web App</span>
+              </button>
+            </div>
+          )}
         </nav>
 
-        {/* Footer tagline */}
-        <div className="p-4 border-t border-border bg-muted/30">
-          <div className="clay-card p-3 text-center space-y-1 bg-white/60">
-            <p className="text-xs font-heading font-bold text-primary-600">Plan. Study. Finish.</p>
-            <p className="text-[10px] text-muted-foreground font-body">Complete your syllabus before exam day</p>
+        {/* User Account / Footer */}
+        <div className="p-3 border-t border-border bg-card">
+          <div className="p-2 rounded-lg bg-muted/50 border border-border/50 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-heading font-semibold text-xs flex items-center justify-center flex-shrink-0">
+                {(user.name || 'S')[0].toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-heading font-medium text-foreground truncate">
+                  {user.name || 'Student'}
+                </p>
+                <p className="text-[10px] text-muted-foreground font-body truncate">
+                  {isSignedIn ? 'Cloud Synced' : 'Guest'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleAuthClick}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-card transition-colors flex-shrink-0"
+              title={isSignedIn ? 'Sign Out' : 'Sign In / Register'}
+              aria-label={isSignedIn ? 'Sign Out' : 'Sign In / Register'}
+            >
+              {isSignedIn ? <SignOut size={15} /> : <SignIn size={15} />}
+            </button>
           </div>
         </div>
       </aside>
